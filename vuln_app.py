@@ -14,6 +14,6 @@ def find_user(username):
     cursor.execute(query)            # CWE-89: SQL Injection
 
 if __name__ == "__main__":
-    user_input = input("Enter a value: ")
+    user_input = input("Enter a value:  ")
     run_command("echo " + user_input)
     find_user(user_input)
