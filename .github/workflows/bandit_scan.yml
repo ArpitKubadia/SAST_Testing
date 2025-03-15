@@ -1,0 +1,39 @@
+name: Bandit Security Scan
+on:
+  pull_request:  # Run on every PR
+    types: [opened, synchronize]
+  workflow_dispatch:  # Allow manual run
+jobs:
+  security_scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Bandit
+        run: pip install bandit
+
+      - name: Run Bandit on code
+        run: bandit -r . -ll -o bandit_output.txt || true 
+        # -r . scans the repo, -ll limits output to MEDIUM and HIGH findings.
+        # '|| true' ensures the job continues even if issues are found (so we can handle results manually).
+
+      - name: Process Bandit results
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if Bandit found any High (or Critical) severity issues:
+          if grep -q "Severity: High" bandit_output.txt; then
+            # Post a comment and mark the PR as blocked
+            gh pr comment $PR_NUMBER --body "Block: High-severity vulnerabilities detected."
+            exit 1  # Fail the job to prevent merge
+          else
+            # No high-severity issues - post success comment and auto-merge the PR
+            gh pr comment $PR_NUMBER --body "Successful: No high-severity issues found."
+            gh pr merge $PR_NUMBER --merge
+          fi
