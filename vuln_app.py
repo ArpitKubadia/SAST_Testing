@@ -17,3 +17,6 @@ if __name__ == "__main__":
     user_input = input("Enter a value: ")
     run_command("echo " + user_input)
     find_user(user_input)
+
+    import os
+    os.system("ls " + input("Enter command: "))  # CWE-78: Command Injection
